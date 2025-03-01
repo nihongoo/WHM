@@ -1,0 +1,272 @@
+erDiagram
+    %% Core Entities
+    Products ||--o{ InventoryTransactions : has
+    Products ||--o{ ProductPriceHistory : tracks
+    Products ||--o{ ProductImages : contains
+    Products ||--o{ StockCounts : has
+    Products }|--|| ProductCategories : "belongs to"
+    Products }|--|| ProductUnits : "measured in"
+    Products }|--|| Suppliers : "supplied by"
+    Products ||--o{ ProductLocations : stored
+    
+    %% Inventory Management
+    Warehouses ||--o{ InventoryTransactions : contains
+    Warehouses ||--o{ ProductLocations : has
+    Warehouses ||--o{ StockCounts : tracked
+    
+    %% Purchase Management
+    PurchaseOrders ||--o{ PurchaseOrderItems : contains
+    PurchaseOrders }|--|| Suppliers : "ordered from"
+    PurchaseOrderItems }|--|| Products : "references"
+    
+    %% Sales Management
+    SalesOrders ||--o{ SalesOrderItems : contains
+    SalesOrders }|--|| Customers : "ordered by"
+    SalesOrderItems }|--|| Products : "references"
+    
+    %% User Management
+    Users ||--o{ InventoryTransactions : creates
+    Users ||--o{ PurchaseOrders : creates
+    Users ||--o{ SalesOrders : manages
+    Users }|--|| UserRoles : has
+    Users ||--o{ AuditLogs : generates
+
+    Products {
+        Guid Id PK
+        string Code UK
+        string Name
+        string Description
+        decimal BasePrice
+        int MinimumStock
+        int MaximumStock
+        string SKU UK
+        string Barcode
+        Guid SupplierId FK
+        Guid CategoryId FK
+        Guid UnitId FK
+        bool AllowNegativeStock
+        string Specifications
+        decimal Weight
+        decimal Volume
+        bool IsActive
+        DateTime CreatedAt
+        DateTime UpdatedAt
+        Guid CreatedById FK
+        Guid UpdatedById FK
+    }
+
+    ProductPriceHistory {
+        Guid Id PK
+        Guid ProductId FK
+        decimal OldPrice
+        decimal NewPrice
+        DateTime EffectiveDate
+        string Reason
+        Guid UpdatedById FK
+        DateTime CreatedAt
+    }
+
+    ProductImages {
+        Guid Id PK
+        Guid ProductId FK
+        string ImageUrl
+        string ThumbnailUrl
+        bool IsPrimary
+        int SortOrder
+        DateTime CreatedAt
+    }
+
+    ProductCategories {
+        Guid Id PK
+        string Name
+        string Code
+        string Description
+        Guid ParentCategoryId FK
+        bool IsActive
+        DateTime CreatedAt
+        DateTime UpdatedAt
+    }
+
+    ProductUnits {
+        Guid Id PK
+        string Name
+        string Abbreviation
+        string Description
+        bool IsActive
+        DateTime CreatedAt
+    }
+
+    InventoryTransactions {
+        Guid Id PK
+        Guid ProductId FK
+        Guid WarehouseId FK
+        Guid UserId FK
+        string TransactionType
+        int Quantity
+        decimal UnitPrice
+        string ReferenceNumber
+        string Notes
+        Guid SourceDocumentId
+        string SourceDocumentType
+        DateTime TransactionDate
+        DateTime CreatedAt
+    }
+
+    StockCounts {
+        Guid Id PK
+        Guid ProductId FK
+        Guid WarehouseId FK
+        int SystemQuantity
+        int CountedQuantity
+        int Discrepancy
+        string Notes
+        string Status
+        DateTime CountDate
+        Guid CountedByUserId FK
+        Guid ApprovedByUserId FK
+        DateTime CreatedAt
+        DateTime UpdatedAt
+    }
+
+    Warehouses {
+        Guid Id PK
+        string Code UK
+        string Name
+        string Address
+        string Phone
+        string Email
+        decimal TotalCapacity
+        decimal UsedCapacity
+        bool IsActive
+        DateTime CreatedAt
+        DateTime UpdatedAt
+    }
+
+    ProductLocations {
+        Guid Id PK
+        Guid ProductId FK
+        Guid WarehouseId FK
+        string Zone
+        string Aisle
+        string Rack
+        string Shelf
+        string Bin
+        DateTime LastUpdated
+    }
+
+    Suppliers {
+        Guid Id PK
+        string Code UK
+        string Name
+        string ContactPerson
+        string Email
+        string Phone
+        string Address
+        string TaxNumber
+        string PaymentTerms
+        decimal CreditLimit
+        bool IsActive
+        DateTime CreatedAt
+        DateTime UpdatedAt
+    }
+
+    PurchaseOrders {
+        Guid Id PK
+        string OrderNumber UK
+        Guid SupplierId FK
+        DateTime OrderDate
+        DateTime ExpectedDeliveryDate
+        decimal TotalAmount
+        string Status
+        string Notes
+        Guid CreatedById FK
+        Guid ApprovedById FK
+        DateTime CreatedAt
+        DateTime UpdatedAt
+    }
+
+    PurchaseOrderItems {
+        Guid Id PK
+        Guid PurchaseOrderId FK
+        Guid ProductId FK
+        int Quantity
+        decimal UnitPrice
+        decimal TotalPrice
+        DateTime CreatedAt
+    }
+
+    Customers {
+        Guid Id PK
+        string Code UK
+        string Name
+        string ContactPerson
+        string Email
+        string Phone
+        string Address
+        string TaxNumber
+        decimal CreditLimit
+        bool IsActive
+        DateTime CreatedAt
+        DateTime UpdatedAt
+    }
+
+    SalesOrders {
+        Guid Id PK
+        string OrderNumber UK
+        Guid CustomerId FK
+        DateTime OrderDate
+        DateTime DeliveryDate
+        decimal TotalAmount
+        string Status
+        string Notes
+        Guid CreatedById FK
+        DateTime CreatedAt
+        DateTime UpdatedAt
+    }
+
+    SalesOrderItems {
+        Guid Id PK
+        Guid SalesOrderId FK
+        Guid ProductId FK
+        int Quantity
+        decimal UnitPrice
+        decimal TotalPrice
+        DateTime CreatedAt
+    }
+
+    Users {
+        Guid Id PK
+        string Username UK
+        string Email UK
+        string PasswordHash
+        string FirstName
+        string LastName
+        string Phone
+        Guid RoleId FK
+        bool IsActive
+        DateTime LastLogin
+        DateTime CreatedAt
+        DateTime UpdatedAt
+    }
+
+    UserRoles {
+        Guid Id PK
+        string Name
+        string Description
+        string Permissions
+        bool IsActive
+        DateTime CreatedAt
+        DateTime UpdatedAt
+    }
+
+    AuditLogs {
+        Guid Id PK
+        Guid UserId FK
+        string Action
+        string EntityName
+        string EntityId
+        string OldValues
+        string NewValues
+        string IPAddress
+        DateTime CreatedAt
+    }
