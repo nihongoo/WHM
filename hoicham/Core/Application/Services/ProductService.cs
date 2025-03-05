@@ -1,4 +1,5 @@
-﻿using hoicham.Core.Domain.Common;
+﻿using hoicham.Core.Application.DTOs.ProductDTOs;
+using hoicham.Core.Domain.Common;
 using hoicham.Core.Domain.Entities;
 using hoicham.Core.Domain.Events.ProductEvents;
 using hoicham.Core.Ports.Input;
@@ -96,6 +97,75 @@ namespace hoicham.Core.Application.Services
 			}
 		}
 
+		public async Task<Result> UpdateProductAsync(ProductUpdateDto request, Guid userId)
+		{
+			try
+			{
+				// Validate product exists
+				var product = await _productRepository.GetByIdAsync(request.Id);
+				if (product == null)
+					return Result.Failure($"Product with ID {request.Id} not found");
+
+				// Update product
+				product.Code = request.Code;
+				product.Name = request.Name;
+				product.Description = request.Description;
+				product.BasePrice = request.BasePrice;
+				product.MinimumStock = request.MinimumStock;
+				product.MaximumStock = request.MaximumStock;
+				product.SKU = request.SKU;
+				product.Barcode = request.Barcode;
+				product.SupplierId = request.SupplierId;
+				product.CategoryId = request.CategoryId;
+				product.UnitId = request.UnitId;
+				product.AllowNegativeStock = request.AllowNegativeStock;
+				product.Specifications = request.Specifications;
+				product.Weight = request.Weight;
+				product.Volume = request.Volume;
+				product.IsActive = request.IsActive;
+				product.UpdatedAt = DateTime.UtcNow;
+				product.UpdatedById = userId;
+
+				// Save changes
+				await _productRepository.UpdateAsync(product);
+				await _unitOfWork.SaveChangesAsync();
+
+				// Log the action
+				_logger.LogInformation($"Product updated: {product.Id}, Name: {product.Name}");
+
+				return Result.Success();
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex, $"Error updating product: {ex.Message}");
+				return Result.Failure($"Failed to update product: {ex.Message}");
+			}
+		}
+
+		public async Task<Result> DeleteProductAsync(Guid productId)
+		{
+			try
+			{
+				// Validate product exists
+				var product = await _productRepository.GetByIdAsync(productId);
+				if (product == null)
+					return Result.Failure($"Product with ID {productId} not found");
+
+				// Delete product
+				await _productRepository.DeleteAsync(product.Id);
+				await _unitOfWork.SaveChangesAsync();
+
+				// Log the action
+				_logger.LogInformation($"Product deleted: {productId}");
+
+				return Result.Success();
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex, $"Error deleting product: {ex.Message}");
+				return Result.Failure($"Failed to delete product: {ex.Message}");
+			}
+		}
 		public async Task<Result> UpdateProductPriceAsync(Guid productId, decimal newPrice)
 		{
 			try

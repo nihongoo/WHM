@@ -1,4 +1,6 @@
-﻿using hoicham.Core.Domain.Common;
+﻿using hoicham.Core.Application.DTOs.InventoryTransactionDTOs;
+using hoicham.Core.Application.DTOs.StockCountDTOs;
+using hoicham.Core.Domain.Common;
 using hoicham.Core.Domain.Entities;
 using hoicham.Core.Domain.Events.InventoryEvents;
 using hoicham.Core.Ports.Input;
@@ -19,6 +21,7 @@ namespace hoicham.Core.Application.Services
 		private readonly ILoggerService _logger;
 		private readonly IStockValidationService _stockValidationService;
 		private readonly IEventDispatcher _eventDispatcher;
+		private readonly IRepository<StockCount> _stockCountRepository;
 
 		public InventoryService(
 			IProductRepository productRepository,
@@ -115,6 +118,105 @@ namespace hoicham.Core.Application.Services
 			{
 				_logger.LogError(ex, $"Error checking stock availability: {ex.Message}");
 				return false;
+			}
+		}
+
+		public async Task<Result> CreateInventoryTransactionAsync(InventoryTransactionCreateDto request, Guid userId)
+		{
+			try
+			{
+				// Validate product exists
+				var product = await _productRepository.GetByIdAsync(request.ProductId);
+				if (product == null)
+					return Result.Failure($"Product with ID {request.ProductId} not found");
+
+				// Validate warehouse exists
+				var warehouse = await _warehouseRepository.GetByIdAsync(request.WarehouseId);
+				if (warehouse == null)
+					return Result.Failure($"Warehouse with ID {request.WarehouseId} not found");
+
+				// Create transaction
+				var transaction = new InventoryTransaction
+				{
+					Id = Guid.NewGuid(),
+					ProductId = request.ProductId,
+					WarehouseId = request.WarehouseId,
+					UserId = userId,
+					TransactionType = request.TransactionType,
+					Quantity = request.Quantity,
+					UnitPrice = request.UnitPrice,
+					ReferenceNumber = request.ReferenceNumber,
+					Notes = request.Notes,
+					SourceDocumentId = request.SourceDocumentId,
+					SourceDocumentType = request.SourceDocumentType,
+					TransactionDate = request.TransactionDate,
+					CreatedAt = DateTime.UtcNow
+				};
+
+				// Save transaction
+				await _inventoryTransactionRepository.AddAsync(transaction);
+				await _unitOfWork.SaveChangesAsync();
+
+				// Log the action
+				_logger.LogInformation($"Inventory transaction created: Product: {request.ProductId}, Warehouse: {request.WarehouseId}, Type: {request.TransactionType}, Quantity: {request.Quantity}");
+
+				return Result.Success();
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex, $"Error creating inventory transaction: {ex.Message}");
+				return Result.Failure($"Failed to create inventory transaction: {ex.Message}");
+			}
+		}
+
+		public async Task<Result> PerformStockCountAsync(StockCountCreateDto request, Guid userId)
+		{
+			try
+			{
+				// Validate product exists
+				var product = await _productRepository.GetByIdAsync(request.ProductId);
+				if (product == null)
+					return Result.Failure($"Product with ID {request.ProductId} not found");
+
+				// Validate warehouse exists
+				var warehouse = await _warehouseRepository.GetByIdAsync(request.WarehouseId);
+				if (warehouse == null)
+					return Result.Failure($"Warehouse with ID {request.WarehouseId} not found");
+
+				// Calculate system quantity
+				var transactions = await _inventoryTransactionRepository.GetAllByProductAndWarehouseAsync(request.ProductId, request.WarehouseId);
+				int systemQuantity = transactions.Sum(t => t.Quantity);
+
+				// Create stock count
+				var stockCount = new StockCount
+				{
+					Id = Guid.NewGuid(),
+					ProductId = request.ProductId,
+					WarehouseId = request.WarehouseId,
+					SystemQuantity = systemQuantity,
+					CountedQuantity = request.CountedQuantity,
+					Discrepancy = request.CountedQuantity - systemQuantity,
+					Notes = request.Notes,
+					Status = "Pending", // Chờ duyệt
+					CountDate = request.CountDate,
+					//CountedByUserId = userId,
+					CreatedAt = DateTime.UtcNow,
+					UpdatedAt = DateTime.UtcNow
+				};
+
+				// Save stock count
+				await _stockCountRepository.AddAsync(stockCount);
+				await _unitOfWork.SaveChangesAsync();
+
+				// Log the action
+				_logger.LogInformation($"Stock count performed: Product: {request.ProductId}, Warehouse: {request.WarehouseId}, System: {systemQuantity}, Counted: {request.CountedQuantity}");
+
+				return Result.Success();
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex, $"Error performing stock count: {ex.Message}");
+				return Result.Failure($"Failed to perform stock count: {ex.Message}");
 			}
 		}
 

@@ -8,6 +8,6 @@ namespace hoicham.Core.Ports.Output.Repositories
 		Task<IEnumerable<ProductLocation>> GetAllByWarehouseAsync(Guid warehouseId);
 		Task<IEnumerable<ProductLocation>> GetAllByProductAsync(Guid productId);
 		Task<IEnumerable<ProductLocation>> GetByWarehouseAndZoneAsync(Guid warehouseId, string zone);
-		Task<bool> IsLocationOccupiedAsync(Guid warehouseId, string zone, string aisle, string rack, string shelf, string bin);
+		//Task<bool> IsLocationOccupiedAsync(Guid warehouseId, string zone, string aisle, string rack, string shelf, string bin);
 	}
 }

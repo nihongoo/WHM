@@ -36,8 +36,6 @@
 
   <ItemGroup>
     <Folder Include="Adapter\Secondary\MessageQueue\" />
-    <Folder Include="Adapter\Secondary\Repositories\" />
-    <Folder Include="Core\Application\DTOs\" />
     <Folder Include="Infrastructure\Configurations\" />
     <Folder Include="Infrastructure\Services\" />
     <Folder Include="Migrations\" />
